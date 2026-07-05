@@ -1,18 +1,22 @@
 ---
 name: ppt2video
-description: 当用户提供 PPT/PPTX/PDF 文件路径，并希望通过远端 PPT2Video 服务生成讲解、音频、脚本或合成视频时使用。
+description: 当用户使用 /ppt2video、想打开 PPT2Video 讲解页面，或提供 PPT/PPTX/PDF 本地路径并希望通过远端 PPT2Video 服务生成讲解、音频、脚本或合成视频时使用。支持两个功能：(1) 打开讲解页面，(2) 输入本地文件路径执行生成讲解任务。
 ---
 
 # PPT2Video
 
-使用远端 PPT2Video 服务为课件生成讲解。这个 skill 只负责调用远端服务：上传文件、创建任务、轮询进度、汇总结果。
+PPT2Video 提供两个远端能力：
 
-## 适用场景
+1. 打开讲解页面
+2. 输入本地课件路径执行生成讲解任务
 
-- 用户给出 `.ppt`、`.pptx` 或 `.pdf` 文件路径，并要求生成讲解、配音、脚本或视频。
-- 用户给出 `task_id`，要求查询或等待生成进度。
+## 路由规则
 
-如果用户没有提供文件路径，只询问 PPT/PPTX/PDF 文件路径。
+- 如果用户只输入 `/ppt2video`，先简洁列出两个功能并询问要执行哪一个。
+- 如果用户要“打开讲解页面”、“打开上传页”、“进入 PPT2Video”，打开讲解页面。
+- 如果用户要“生成讲解”、“执行生成任务”，但没有提供文件路径，询问 `.ppt`、`.pptx` 或 `.pdf` 的绝对路径。
+- 如果用户提供 `.ppt`、`.pptx` 或 `.pdf` 文件路径，调用远端服务生成讲解。
+- 如果用户提供 `task_id`，查询或等待该任务进度。
 
 ## 服务配置
 
@@ -21,7 +25,17 @@ description: 当用户提供 PPT/PPTX/PDF 文件路径，并希望通过远端 P
 - 默认服务 key：`local-skill-service-key-20260702`
 - 客户端脚本：`scripts/ppt_narration_client.py`
 
-## 使用方式
+## 功能 1：打开讲解页面
+
+打开：
+
+```text
+http://36.140.182.229:60010/qilinvideo/skill-upload?service_key=local-skill-service-key-20260702
+```
+
+对用户只需简洁说明“已打开 PPT2Video 讲解页面”。如果无法打开，再说明失败原因。
+
+## 功能 2：生成讲解任务
 
 创建任务并等待完成：
 

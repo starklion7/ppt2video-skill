@@ -1,6 +1,9 @@
 # ppt2video-skill
 
-这是一个可从 GitHub 安装的 Codex skill 仓库，用于通过远端 PPT2Video 服务为 PPT/PPTX/PDF 生成讲解。
+这是一个可从 GitHub 安装的 Codex skill 仓库，对外提供一个 `ppt2video` 入口：
+
+1. 打开 PPT2Video 讲解页面
+2. 输入本地 PPT/PPTX/PDF 路径，通过远端 PPT2Video 服务生成讲解
 
 ## 安装
 
