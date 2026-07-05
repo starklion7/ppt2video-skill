@@ -12,34 +12,12 @@ import urllib.request
 import uuid
 
 
-DEFAULT_BASE_URL = "http://127.0.0.1:8000"
-DEFAULT_ENV_FILE = "/Users/tsir/workspace/ppt2video/.env"
+DEFAULT_BASE_URL = "http://36.140.182.229:60010"
+DEFAULT_SERVICE_KEY = "local-skill-service-key-20260702"
 
 
-def load_env_value(env_file: str, key: str) -> str:
-    if not env_file or not os.path.isfile(env_file):
-        return ""
-    with open(env_file, "r", encoding="utf-8") as f:
-        for raw in f:
-            line = raw.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            k, v = line.split("=", 1)
-            if k.strip() == key:
-                return v.strip().strip('"').strip("'")
-    return ""
-
-
-def resolve_service_key(args) -> str:
-    if args.service_key:
-        return args.service_key
-    env_value = os.environ.get("SERVICE_API_KEY", "").strip()
-    if env_value:
-        return env_value
-    file_value = load_env_value(args.env_file, "SERVICE_API_KEY")
-    if file_value:
-        return file_value
-    raise RuntimeError("未找到 SERVICE_API_KEY，请通过 --service-key、环境变量或 .env 提供")
+def resolve_service_key() -> str:
+    return DEFAULT_SERVICE_KEY
 
 
 def build_headers(service_key: str, content_type: str = None) -> dict:
@@ -94,7 +72,7 @@ def encode_multipart(fields: dict, file_field: str, file_path: str) -> tuple:
 
 
 def submit_task(args) -> dict:
-    service_key = resolve_service_key(args)
+    service_key = resolve_service_key()
     if not os.path.isfile(args.file):
         raise RuntimeError("文件不存在: %s" % args.file)
     body, content_type = encode_multipart(
@@ -108,7 +86,7 @@ def submit_task(args) -> dict:
         file_path=args.file,
     )
     req = urllib.request.Request(
-        args.base_url.rstrip("/") + "/api/upload-ppt",
+        DEFAULT_BASE_URL.rstrip("/") + "/api/upload-ppt",
         data=body,
         headers=build_headers(service_key, content_type),
         method="POST",
@@ -119,8 +97,8 @@ def submit_task(args) -> dict:
 
 
 def get_progress(args, task_id: str) -> dict:
-    service_key = resolve_service_key(args)
-    url = args.base_url.rstrip("/") + "/api/task/%s/progress" % urllib.parse.quote(task_id)
+    service_key = resolve_service_key()
+    url = DEFAULT_BASE_URL.rstrip("/") + "/api/task/%s/progress" % urllib.parse.quote(task_id)
     return http_get_json(url, build_headers(service_key))
 
 
@@ -177,18 +155,11 @@ def cmd_run(args) -> int:
     return 0
 
 
-def add_common_args(parser):
-    parser.add_argument("--base-url", default=DEFAULT_BASE_URL)
-    parser.add_argument("--env-file", default=DEFAULT_ENV_FILE)
-    parser.add_argument("--service-key", default="")
-
-
 def build_parser():
     parser = argparse.ArgumentParser(description="ppt2video narration service client")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     submit = subparsers.add_parser("submit")
-    add_common_args(submit)
     submit.add_argument("--file", required=True)
     submit.add_argument("--mode", default="realtime", choices=["normal", "realtime"])
     submit.add_argument("--duration", type=int, default=5)
@@ -198,19 +169,16 @@ def build_parser():
     submit.set_defaults(func=cmd_submit)
 
     progress = subparsers.add_parser("progress")
-    add_common_args(progress)
     progress.add_argument("--task-id", required=True)
     progress.set_defaults(func=cmd_progress)
 
     wait = subparsers.add_parser("wait")
-    add_common_args(wait)
     wait.add_argument("--task-id", required=True)
     wait.add_argument("--interval", type=int, default=5)
     wait.add_argument("--wait-timeout", type=int, default=3600)
     wait.set_defaults(func=cmd_wait)
 
     run = subparsers.add_parser("run")
-    add_common_args(run)
     run.add_argument("--file", required=True)
     run.add_argument("--mode", default="realtime", choices=["normal", "realtime"])
     run.add_argument("--duration", type=int, default=5)

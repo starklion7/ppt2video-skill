@@ -1,48 +1,67 @@
 ---
 name: ppt2video
-description: 当用户想用 /ppt2video 风格入口打开 PPT2Video 正式上传讲解工作台，或让 Codex 直接调用 ppt2video 后端为本地 PPT/PPTX/PDF 生成讲解、音频、脚本或合成视频时使用。
+description: 当用户提供 PPT/PPTX/PDF 文件路径，并希望通过远端 PPT2Video 服务生成讲解、音频、脚本或合成视频时使用。
 ---
 
 # PPT2Video
 
-这是 PPT2Video 项目的顶层入口 skill。根据用户意图选择页面上传模式或后台直连模式。
+使用远端 PPT2Video 服务为课件生成讲解。这个 skill 只负责调用远端服务：上传文件、创建任务、轮询进度、汇总结果。
 
-## 优先交互方式
+## 适用场景
 
-1. 用户想打开页面、上传表单、讲解页、工作台时：
-   - 使用预置服务 key：`local-skill-service-key-20260702`
-   - 打开页面时带上 `?service_key=local-skill-service-key-20260702`
-   - 页面会把 key 写入浏览器本地存储 `ppt2video_service_key`，然后清理地址栏参数
-   - 优先打开正式前端入口：`/qilinvideo/skill-upload`
-   - 当前部署地址：
-     `http://36.140.182.229:60010/qilinvideo/skill-upload?service_key=local-skill-service-key-20260702`
+- 用户给出 `.ppt`、`.pptx` 或 `.pdf` 文件路径，并要求生成讲解、配音、脚本或视频。
+- 用户给出 `task_id`，要求查询或等待生成进度。
 
-2. 用户已经给出本地 `.ppt`、`.pptx` 或 `.pdf` 路径，并希望 Codex 直接生成讲解时：
-   - 切换到 `ppt2video-service` skill
-   - 使用它的客户端上传文件、轮询进度，并汇总生成结果
+如果用户没有提供文件路径，只询问 PPT/PPTX/PDF 文件路径。
 
-## 页面模式
+## 服务配置
 
-适用于用户说：
+- 服务地址：`http://36.140.182.229:60010`
+- 鉴权请求头：`X-Service-Key`
+- 默认服务 key：`local-skill-service-key-20260702`
+- 客户端脚本：`scripts/ppt_narration_client.py`
 
-- “打开讲解页”
-- “打开上传讲解页面”
-- “打开 PPT2Video 上传页”
-- “我想在页面里上传 PPT”
-- “生成讲解”，但还没有提供本地文件路径
+## 使用方式
 
-优先打开：
+创建任务并等待完成：
 
-- `http://36.140.182.229:60010/qilinvideo/skill-upload?service_key=local-skill-service-key-20260702`
+```bash
+python3 "$CODEX_HOME/skills/ppt2video/scripts/ppt_narration_client.py" run \
+  --file "/absolute/path/to/demo.pptx"
+```
 
-如果页面最终跳转到 `/qilinvideo/video/create`，这通常是实际讲解创建工作台，继续在该页面操作即可。
+常用生成参数：
 
-## 后台模式
+```bash
+python3 "$CODEX_HOME/skills/ppt2video/scripts/ppt_narration_client.py" run \
+  --file "/absolute/path/to/demo.pptx" \
+  --mode realtime \
+  --duration 5 \
+  --realtime-duration-level brief
+```
 
-适用于用户已经提供本地文件路径，或明确要求“你帮我直接生成”。此时不要重新实现上传流程，改用 `ppt2video-service`。
+查询任务：
 
-## 注意事项
+```bash
+python3 "$CODEX_HOME/skills/ppt2video/scripts/ppt_narration_client.py" progress \
+  --task-id "<task_id>"
+```
 
-- 优先使用正式前端工作台，不使用本地原型 HTML。
-- 页面入口应该走服务 key 模式，不走 JWT 登录模式。
-- 打开页面时必须带上预置 `service_key`，避免让用户手动粘贴 key。
+等待任务完成：
+
+```bash
+python3 "$CODEX_HOME/skills/ppt2video/scripts/ppt_narration_client.py" wait \
+  --task-id "<task_id>"
+```
+
+## 输出要求
+
+任务完成后，向用户总结：
+
+- `task_id`
+- 最终 `stage`
+- 章节数量
+- `merged_url`，如果存在
+- 是否启用鼠标轨迹
+
+任务耗时较长时，只汇报有意义的阶段变化，不要倾倒原始 JSON。

@@ -1,0 +1,7 @@
+interface:
+  display_name: "PPT2Video"
+  short_description: "通过远端服务生成课件讲解"
+  default_prompt: "Use $ppt2video to generate narration for a PPT/PPTX/PDF with the remote PPT2Video service."
+
+policy:
+  allow_implicit_invocation: true
