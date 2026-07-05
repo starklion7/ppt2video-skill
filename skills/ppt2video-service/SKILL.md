@@ -1,9 +1,9 @@
 ---
-name: ppt-narration-service
+name: ppt2video-service
 description: 当用户提供本地 PPT/PPTX/PDF 路径，并希望通过 ppt2video 后端服务生成讲解、音频、脚本或合成视频时使用。也用于查询任务进度、等待任务完成、导出结果和验证服务 key 调用链路。
 ---
 
-# PPT 讲解后台服务
+# PPT2Video 后台服务
 
 当用户希望 Codex 直接调用 `ppt2video` 后端，而不是在网页中手动上传时，使用本 skill。
 
@@ -29,14 +29,14 @@ description: 当用户提供本地 PPT/PPTX/PDF 路径，并希望通过 ppt2vid
 使用随 skill 打包的客户端：
 
 ```bash
-python3 /Users/tsir/workspace/ppt2video/.codex/skills/ppt-narration-service/scripts/ppt_narration_client.py run \
+python3 /Users/tsir/.codex/skills/ppt2video-service/scripts/ppt_narration_client.py run \
   --file "/absolute/path/to/demo.pptx"
 ```
 
 常用参数：
 
 ```bash
-python3 /Users/tsir/workspace/ppt2video/.codex/skills/ppt-narration-service/scripts/ppt_narration_client.py run \
+python3 /Users/tsir/.codex/skills/ppt2video-service/scripts/ppt_narration_client.py run \
   --file "/absolute/path/to/demo.pptx" \
   --base-url "http://127.0.0.1:8000" \
   --env-file "/Users/tsir/workspace/ppt2video/.env" \
@@ -50,14 +50,14 @@ python3 /Users/tsir/workspace/ppt2video/.codex/skills/ppt-narration-service/scri
 查询单个任务：
 
 ```bash
-python3 /Users/tsir/workspace/ppt2video/.codex/skills/ppt-narration-service/scripts/ppt_narration_client.py progress \
+python3 /Users/tsir/.codex/skills/ppt2video-service/scripts/ppt_narration_client.py progress \
   --task-id "<task_id>"
 ```
 
 等待已有任务完成：
 
 ```bash
-python3 /Users/tsir/workspace/ppt2video/.codex/skills/ppt-narration-service/scripts/ppt_narration_client.py wait \
+python3 /Users/tsir/.codex/skills/ppt2video-service/scripts/ppt_narration_client.py wait \
   --task-id "<task_id>"
 ```
 

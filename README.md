@@ -1,21 +1,27 @@
 # ppt2video-skill
 
-A shareable Codex skill repository for installing the `ppt-narration-service` skill.
+这是一个可从 GitHub 安装的 Codex skill 仓库，包含 PPT2Video 的页面入口和后台生成讲解能力。
 
-## Install
+## 安装
 
 ```bash
 python3 /Users/tsir/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
-  --repo <your-github-owner>/ppt2video-skill \
-  --path skills/ppt-narration-service
+  --repo starklion7/ppt2video-skill \
+  --path skills/ppt2video skills/ppt2video-service
 ```
 
-After installing, restart Codex.
+安装后重启 Codex，让新 skill 生效。
 
-## Layout
+## 目录
 
 ```text
 skills/
+  ppt2video/
+    SKILL.md
+  ppt2video-service/
+    SKILL.md
+    scripts/
+      ppt_narration_client.py
   ppt-narration-service/
     SKILL.md
     scripts/
