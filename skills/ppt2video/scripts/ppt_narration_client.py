@@ -14,6 +14,7 @@ import uuid
 
 DEFAULT_BASE_URL = "http://36.140.182.229:60010"
 DEFAULT_SERVICE_KEY = "local-skill-service-key-20260702"
+SUPPORTED_EXTENSIONS = {".ppt", ".pptx", ".pdf"}
 
 
 def resolve_service_key() -> str:
@@ -71,10 +72,36 @@ def encode_multipart(fields: dict, file_field: str, file_path: str) -> tuple:
     return body, "multipart/form-data; boundary=%s" % boundary
 
 
+def validate_file_path(file_path: str) -> None:
+    if not os.path.isfile(file_path):
+        raise RuntimeError("文件不存在: %s" % file_path)
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext not in SUPPORTED_EXTENSIONS:
+        raise RuntimeError(
+            "不支持的文件格式: %s，仅支持 %s"
+            % (ext or "(无扩展名)", ", ".join(sorted(SUPPORTED_EXTENSIONS)))
+        )
+
+
+def build_task_summary(task_id: str, progress: dict) -> dict:
+    return {
+        "task_id": task_id,
+        "stage": progress.get("stage"),
+        "detail": progress.get("detail"),
+        "chapter_count": len(progress.get("chapters") or []),
+        "merged_url": progress.get("merged_url"),
+        "enable_mouse_tracking": progress.get("enable_mouse_tracking"),
+        "ppt_original_name": progress.get("ppt_original_name"),
+    }
+
+
+def exit_code_for_stage(stage: str) -> int:
+    return 0 if stage == "done" else 1
+
+
 def submit_task(args) -> dict:
     service_key = resolve_service_key()
-    if not os.path.isfile(args.file):
-        raise RuntimeError("文件不存在: %s" % args.file)
+    validate_file_path(args.file)
     body, content_type = encode_multipart(
         fields={
             "duration_minutes": args.duration,
@@ -93,7 +120,10 @@ def submit_task(args) -> dict:
     )
     with urllib.request.urlopen(req, timeout=args.submit_timeout) as resp:
         data = parse_response(resp.read())
-    return {"task_id": data.get("task_id")}
+    task_id = data.get("task_id")
+    if not task_id:
+        raise RuntimeError("提交成功但未返回 task_id")
+    return {"task_id": task_id}
 
 
 def get_progress(args, task_id: str) -> dict:
@@ -134,7 +164,7 @@ def cmd_progress(args) -> int:
 def cmd_wait(args) -> int:
     progress = wait_task(args, args.task_id)
     print(json.dumps(progress, ensure_ascii=False, indent=2))
-    return 0
+    return exit_code_for_stage(progress.get("stage"))
 
 
 def cmd_run(args) -> int:
@@ -142,17 +172,9 @@ def cmd_run(args) -> int:
     task_id = submit_result["task_id"]
     print("[submit] task_id=%s" % task_id, flush=True)
     progress = wait_task(args, task_id)
-    summary = {
-        "task_id": task_id,
-        "stage": progress.get("stage"),
-        "detail": progress.get("detail"),
-        "chapter_count": len(progress.get("chapters") or []),
-        "merged_url": progress.get("merged_url"),
-        "enable_mouse_tracking": progress.get("enable_mouse_tracking"),
-        "ppt_original_name": progress.get("ppt_original_name"),
-    }
+    summary = build_task_summary(task_id, progress)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
-    return 0
+    return exit_code_for_stage(summary.get("stage"))
 
 
 def build_parser():
