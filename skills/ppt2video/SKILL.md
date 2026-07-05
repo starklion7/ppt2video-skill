@@ -9,13 +9,32 @@ description: 输出 PPT2Video 讲解页面链接，或根据本地 PPT/PPTX/PDF 
 
 ## 工作流
 
+**仅输入 `/ppt2video` 或 `$ppt2video`，未说明具体需求？** → 展示全部能力（第 0 节）  
 **要页面链接？** → 输出跳转链接（第 1 节）  
 **要生成讲解？** → 确认文件绝对路径后执行脚本（第 2 节）  
 **已有 task_id？** → 查询或等待进度（第 3 节）
 
+## 0. 默认入口（无明确意图时）
+
+当用户只输入 `/ppt2video` 或 `$ppt2video`，没有说明要链接还是生成讲解时，**必须同时展示两项能力**，不要只输出链接：
+
+```markdown
+PPT2Video 支持以下两种方式：
+
+**1. 打开讲解页面上传课件**
+PPT2Video 讲解页面：[点击打开](http://36.140.182.229:60010/qilinvideo/skill-upload?service_key=local-skill-service-key-20260702)
+
+**2. 直接生成讲解视频**
+提供本地课件路径（`.ppt` / `.pptx` / `.pdf`），我会调用远端服务生成讲解、音频与合成视频。
+
+请告诉我你想用哪种方式；若选第 2 种，请提供文件的绝对路径。
+```
+
+不要调用浏览器工具自动打开页面。
+
 ## 1. 输出跳转链接
 
-当用户使用 `/ppt2video` 或要求打开/进入 PPT2Video 时，直接输出：
+当用户**明确要求**打开/进入 PPT2Video 页面或只要跳转链接时，输出：
 
 ```markdown
 PPT2Video 讲解页面：[点击打开](http://36.140.182.229:60010/qilinvideo/skill-upload?service_key=local-skill-service-key-20260702)

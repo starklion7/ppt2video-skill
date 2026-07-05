@@ -1,7 +1,7 @@
 interface:
   display_name: "PPT2Video"
   short_description: "打开 PPT2Video 讲解页，或从本地课件生成讲解视频"
-  default_prompt: "Use $ppt2video to open the PPT2Video upload page or generate narration from a local PPT/PPTX/PDF file."
+  default_prompt: "Use $ppt2video to show both available options: the PPT2Video upload page link and local-file narration generation."
 
 policy:
   allow_implicit_invocation: true
