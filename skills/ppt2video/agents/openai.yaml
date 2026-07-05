@@ -1,7 +1,7 @@
 interface:
   display_name: "PPT2Video"
-  short_description: "获取讲解页面链接或生成课件讲解"
-  default_prompt: "Use $ppt2video to get the PPT2Video narration page link or generate narration from a local PPT/PPTX/PDF."
+  short_description: "输出页面链接或生成课件讲解"
+  default_prompt: "Use $ppt2video to get the PPT2Video page link or generate narration from a local PPT/PPTX/PDF."
 
 policy:
   allow_implicit_invocation: true

@@ -2,7 +2,7 @@
 
 这是一个可从 GitHub 安装的 Codex skill 仓库，对外提供一个 `ppt2video` 入口：
 
-1. 打开 PPT2Video 讲解页面
+1. 输出 PPT2Video 讲解页面跳转链接
 2. 输入本地 PPT/PPTX/PDF 路径，通过远端 PPT2Video 服务生成讲解
 
 ## 安装
