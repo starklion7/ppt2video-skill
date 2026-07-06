@@ -11,7 +11,7 @@ description: 输出 PPT2Video 讲解页面链接，或根据本地 PPT/PPTX/PDF 
 
 **仅输入 `/ppt2video` 或 `$ppt2video`，未说明具体需求？** → 展示全部能力（第 0 节）  
 **要页面链接？** → 输出跳转链接（第 1 节）  
-**要生成讲解？** → 确认文件绝对路径后执行脚本（第 2 节）  
+**要生成讲解？** → 确认文件绝对路径后提交任务并返回 `task_id`（第 2 节）  
 **已有 task_id？** → 查询或等待进度（第 3 节）
 
 ## 0. 默认入口（无明确意图时）
@@ -44,19 +44,29 @@ PPT2Video 讲解页面：[点击打开](http://36.140.182.229:60010/qilinvideo/s
 
 ## 2. 生成讲解
 
-当用户提供 `.ppt`、`.pptx` 或 `.pdf` 本地文件路径时，执行 `run`（提交并等待完成）：
+当用户提供 `.ppt`、`.pptx` 或 `.pdf` 本地文件路径时，默认执行 `submit`，提交成功后立即返回 `task_id`，并说明可在“我的讲解”页查看：
 
 ```bash
-python3 "$CODEX_HOME/skills/ppt2video/scripts/ppt_narration_client.py" run \
+python3 "$CODEX_HOME/skills/ppt2video/scripts/ppt_narration_client.py" submit \
   --file "/absolute/path/to/course.pptx"
 ```
 
 若用户要求生成讲解但未提供文件路径，只询问课件文件的绝对路径。
 
-若只需提交、不等待，使用 `submit`：
+提交成功时按此模板回复：
+
+```markdown
+讲解任务已提交。
+
+- 任务 ID：{task_id}
+- 查看页面：[点击打开](http://36.140.182.229:60010/qilinvideo/skill-upload?service_key=local-skill-service-key-20260702)
+- 说明：可在“我的讲解”页查看任务进度与结果。
+```
+
+若用户明确要求等待完成，再执行 `run`：
 
 ```bash
-python3 "$CODEX_HOME/skills/ppt2video/scripts/ppt_narration_client.py" submit \
+python3 "$CODEX_HOME/skills/ppt2video/scripts/ppt_narration_client.py" run \
   --file "/absolute/path/to/course.pptx"
 ```
 
@@ -99,6 +109,7 @@ python3 "$CODEX_HOME/skills/ppt2video/scripts/ppt_narration_client.py" wait \
 
 - 脚本退出码 `0` 表示成功，`1` 为业务或校验错误，`2` 为网络/HTTP 错误。
 - `stage=done`：按下方模板总结，不要粘贴完整 JSON。
+- `submit` 成功：优先返回 `task_id` 和“我的讲解”页说明，不等待最终合成。
 - `stage=error`：说明 `detail` 中的错误信息，并告知用户可重试或检查文件格式。
 - 等待超时：告知用户保留 `task_id`，可用 `progress` 继续查询。
 

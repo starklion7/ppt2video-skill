@@ -12,8 +12,9 @@ import urllib.request
 import uuid
 
 
-DEFAULT_BASE_URL = "http://36.140.182.229:60010"
+DEFAULT_BASE_URL = "http://36.140.182.229:60010/qilinvideo"
 DEFAULT_SERVICE_KEY = "local-skill-service-key-20260702"
+DEFAULT_SKILL_UPLOAD_URL = DEFAULT_BASE_URL + "/skill-upload?service_key=" + DEFAULT_SERVICE_KEY
 SUPPORTED_EXTENSIONS = {".ppt", ".pptx", ".pdf"}
 
 
@@ -123,7 +124,10 @@ def submit_task(args) -> dict:
     task_id = data.get("task_id")
     if not task_id:
         raise RuntimeError("提交成功但未返回 task_id")
-    return {"task_id": task_id}
+    return {
+        "task_id": task_id,
+        "view_url": DEFAULT_SKILL_UPLOAD_URL,
+    }
 
 
 def get_progress(args, task_id: str) -> dict:
@@ -171,6 +175,7 @@ def cmd_run(args) -> int:
     submit_result = submit_task(args)
     task_id = submit_result["task_id"]
     print("[submit] task_id=%s" % task_id, flush=True)
+    print("[submit] view_url=%s" % submit_result["view_url"], flush=True)
     progress = wait_task(args, task_id)
     summary = build_task_summary(task_id, progress)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
