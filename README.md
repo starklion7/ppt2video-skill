@@ -8,7 +8,7 @@
 ## 安装
 
 ```bash
-python3 /Users/tsir/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+python3 "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
   --repo starklion7/ppt2video-skill \
   --path skills/ppt2video
 ```
