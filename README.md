@@ -3,7 +3,7 @@
 这是一个可从 GitHub 安装的 Codex skill 仓库，对外提供一个 `ppt2video` 入口：
 
 1. 输出 PPT2Video 讲解页面跳转链接
-2. 随 skill 分发一个轻量前端上传页
+2. 随 skill 分发一个轻量前端上传页，该页面通过远端 MCP 调用 PPT2Video 服务
 3. 输入本地 PPT/PPTX/PDF 路径，提交成功后返回任务 ID，并提示可在“我的讲解”页查看
 
 ## 安装

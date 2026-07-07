@@ -13,12 +13,12 @@
           <p class="eyebrow">PPT2Video</p>
           <h1>上传 PPT 生成讲解</h1>
           <p class="subtle">
-            这个页面直接调用远程 ppt2video 后端服务，适合在 Codex、浏览器或内部工具里作为轻入口使用。
+            这个页面通过远程 MCP 调用 ppt2video 服务，适合在 Codex、浏览器或内部工具里作为轻入口使用。
           </p>
         </div>
         <div class="status-card">
-          <span class="status-label">后端地址</span>
-          <code id="backend-url-preview">http://36.140.182.229:60010/qilinvideo/</code>
+          <span class="status-label">MCP 地址</span>
+          <code id="backend-url-preview">http://36.140.182.229:60010/qilinvideo/mcp</code>
         </div>
       </section>
 
@@ -26,7 +26,7 @@
         <h2>连接配置</h2>
         <div class="grid two">
           <label class="field">
-            <span>后端服务地址</span>
+            <span>服务入口地址</span>
             <input id="base-url" type="url" value="http://36.140.182.229:60010/qilinvideo" placeholder="http://36.140.182.229:60010/qilinvideo" />
           </label>
           <label class="field">

@@ -1,6 +1,6 @@
 ---
 name: ppt2video
-description: 输出 PPT2Video 讲解页面链接，或根据本地 PPT/PPTX/PDF 调用远端服务生成讲解、音频、脚本与合成视频。Use when the user invokes /ppt2video, asks for the PPT2Video upload page, or provides a local presentation file path for narration generation.
+description: 输出 PPT2Video 讲解页面链接，打开随 skill 分发的本地 HTML 上传页，或根据本地 PPT/PPTX/PDF 生成讲解、音频、脚本与合成视频。Use when the user invokes /ppt2video, asks for the PPT2Video upload page, or provides a local presentation file path for narration generation.
 ---
 
 # PPT2Video
@@ -8,6 +8,8 @@ description: 输出 PPT2Video 讲解页面链接，或根据本地 PPT/PPTX/PDF 
 脚本路径：`$CODEX_HOME/skills/ppt2video/scripts/ppt_narration_client.py`
 
 页面资产路径：`$CODEX_HOME/skills/ppt2video/assets/upload-ui/index.html`
+
+本地 HTML 页面通过远端 MCP 调用服务：`http://36.140.182.229:60010/qilinvideo/mcp`
 
 ## 工作流
 
@@ -29,6 +31,8 @@ PPT2Video 讲解页面：[点击打开](http://36.140.182.229:60010/qilinvideo/s
 如果用户想使用随 skill 分发的轻量上传页，也可以打开本地页面：
 `$CODEX_HOME/skills/ppt2video/assets/upload-ui/index.html`
 
+该本地页面会通过远端 MCP 提交文件和查询进度，不直接调用普通 `/api/upload-ppt` 接口。
+
 **2. 直接生成讲解视频**
 提供本地课件路径（`.ppt` / `.pptx` / `.pdf`），我会调用远端服务生成讲解、音频与合成视频。
 
@@ -46,6 +50,8 @@ PPT2Video 讲解页面：[点击打开](http://36.140.182.229:60010/qilinvideo/s
 
 随 skill 安装的轻量上传页：
 `$CODEX_HOME/skills/ppt2video/assets/upload-ui/index.html`
+
+轻量上传页调用远端 MCP：`/qilinvideo/mcp`
 ```
 
 不要调用浏览器工具自动打开页面，除非用户明确要求“帮我打开”。

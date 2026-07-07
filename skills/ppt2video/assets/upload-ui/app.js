@@ -55,7 +55,7 @@ function loadSettings() {
 }
 
 function refreshBaseUrlPreview() {
-  els.backendUrlPreview.textContent = normalizeBaseUrl(els.baseUrl.value) + "/";
+  els.backendUrlPreview.textContent = getMcpUrl();
 }
 
 function appendLog(message, kind = "info") {
@@ -83,11 +83,16 @@ function getHeaders() {
     throw new Error("请先填写服务 Key");
   }
   return {
+    "Content-Type": "application/json",
     "X-Service-Key": serviceKey,
   };
 }
 
-async function parseApiResponse(response) {
+function getMcpUrl() {
+  return `${normalizeBaseUrl(els.baseUrl.value)}/mcp`;
+}
+
+async function parseJsonResponse(response) {
   const text = await response.text();
   let payload = {};
   try {
@@ -98,10 +103,49 @@ async function parseApiResponse(response) {
   if (!response.ok) {
     throw new Error(payload.message || `HTTP ${response.status}`);
   }
-  if ((payload.code ?? 200) !== 200) {
-    throw new Error(payload.message || `接口返回 code=${payload.code}`);
+  return payload;
+}
+
+async function callMcp(method, params = {}) {
+  const response = await fetch(getMcpUrl(), {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: Date.now(),
+      method,
+      params,
+    }),
+  });
+  const payload = await parseJsonResponse(response);
+  if (payload.error) {
+    throw new Error(payload.error.message || `MCP error ${payload.error.code}`);
   }
-  return payload.data || {};
+  return payload.result || {};
+}
+
+async function callMcpTool(name, args = {}) {
+  const result = await callMcp("tools/call", {
+    name,
+    arguments: args,
+  });
+  if (result.structuredContent) return result.structuredContent;
+  const text = result.content?.find((item) => item.type === "text")?.text || "{}";
+  try {
+    return JSON.parse(text);
+  } catch (_err) {
+    return { text };
+  }
+}
+
+async function fileToBase64(file) {
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("读取文件失败"));
+    reader.readAsDataURL(file);
+  });
+  return dataUrl.includes(",") ? dataUrl.split(",", 2)[1] : dataUrl;
 }
 
 function buildAbsoluteUrl(baseUrl, maybeRelative) {
@@ -114,13 +158,15 @@ function buildAbsoluteUrl(baseUrl, maybeRelative) {
 async function checkHealth() {
   saveSettings();
   refreshBaseUrlPreview();
-  appendLog("开始检查后端健康状态…");
+  appendLog("开始检查远程 MCP…");
   try {
-    const response = await fetch(`${normalizeBaseUrl(els.baseUrl.value)}/health`);
-    const data = await response.json();
-    appendLog(`服务可达: ${JSON.stringify(data)}`, "success");
+    const initResult = await callMcp("initialize", {});
+    const toolsResult = await callMcp("tools/list", {});
+    const names = (toolsResult.tools || []).map((tool) => tool.name).join(", ");
+    appendLog(`MCP 可达: ${initResult.serverInfo?.name || "ppt2video"}`, "success");
+    appendLog(`工具列表: ${names || "-"}`, "success");
   } catch (error) {
-    appendLog(`服务不可达: ${error.message}`, "error");
+    appendLog(`MCP 不可达: ${error.message}`, "error");
   }
 }
 
@@ -134,22 +180,19 @@ async function submitTask(event) {
     return;
   }
 
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("duration_minutes", String(els.duration.value || 5));
-  formData.append("enable_mouse_tracking", els.mouseTracking.checked ? "true" : "false");
-  formData.append("mode", els.mode.value);
-  formData.append("realtime_duration_level", els.realtimeLevel.value);
-
   try {
     setBusyState();
-    appendLog(`开始上传文件: ${file.name}`);
-    const response = await fetch(`${normalizeBaseUrl(els.baseUrl.value)}/api/upload-ppt`, {
-      method: "POST",
-      headers: getHeaders(),
-      body: formData,
+    appendLog(`开始读取文件并通过 MCP 提交: ${file.name}`);
+    const fileBase64 = await fileToBase64(file);
+    appendLog(`文件读取完成，开始调用 submit_narration_base64`);
+    const data = await callMcpTool("submit_narration_base64", {
+      filename: file.name,
+      file_base64: fileBase64,
+      duration: Number(els.duration.value || 5),
+      enable_mouse_tracking: els.mouseTracking.checked,
+      mode: els.mode.value,
+      realtime_duration_level: els.realtimeLevel.value,
     });
-    const data = await parseApiResponse(response);
     currentTaskId = data.task_id || "";
     els.taskId.textContent = currentTaskId || "-";
     appendLog(`任务已创建: ${currentTaskId}`, "success");
@@ -167,12 +210,19 @@ async function submitTask(event) {
 function renderResult(progressData) {
   const chapters = progressData.chapters || [];
   els.pptName.textContent = progressData.ppt_original_name || "-";
-  els.chapterCount.textContent = String(chapters.length);
+  els.chapterCount.textContent = String(progressData.chapter_count ?? chapters.length);
   const mergedAbsoluteUrl = buildAbsoluteUrl(els.baseUrl.value, progressData.merged_url || "");
   els.mergedUrl.textContent = mergedAbsoluteUrl || "-";
   els.mergedUrl.href = mergedAbsoluteUrl || "#";
 
   els.chapterList.innerHTML = "";
+  if (!chapters.length) {
+    const li = document.createElement("li");
+    li.className = "chapter-item";
+    li.textContent = "远程 MCP 当前返回任务摘要；章节详情可在正式讲解页查看。";
+    els.chapterList.appendChild(li);
+    return;
+  }
   chapters.forEach((chapter, index) => {
     const li = document.createElement("li");
     li.className = "chapter-item";
@@ -206,13 +256,9 @@ async function refreshProgress() {
   }
   try {
     els.refreshButton.disabled = true;
-    const response = await fetch(
-      `${normalizeBaseUrl(els.baseUrl.value)}/api/task/${encodeURIComponent(currentTaskId)}/progress`,
-      {
-        headers: getHeaders(),
-      }
-    );
-    const data = await parseApiResponse(response);
+    const data = await callMcpTool("get_progress", {
+      task_id: currentTaskId,
+    });
     els.taskStage.textContent = data.stage || "-";
     els.taskDetail.textContent = data.detail || "-";
     renderResult(data);
