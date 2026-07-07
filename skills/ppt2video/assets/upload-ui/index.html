@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PPT2Video 上传页</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel hero">
+        <div>
+          <p class="eyebrow">PPT2Video</p>
+          <h1>上传 PPT 生成讲解</h1>
+          <p class="subtle">
+            这个页面直接调用远程 ppt2video 后端服务，适合在 Codex、浏览器或内部工具里作为轻入口使用。
+          </p>
+        </div>
+        <div class="status-card">
+          <span class="status-label">后端地址</span>
+          <code id="backend-url-preview">http://36.140.182.229:60010/qilinvideo/</code>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>连接配置</h2>
+        <div class="grid two">
+          <label class="field">
+            <span>后端服务地址</span>
+            <input id="base-url" type="url" value="http://36.140.182.229:60010/qilinvideo" placeholder="http://36.140.182.229:60010/qilinvideo" />
+          </label>
+          <label class="field">
+            <span>服务 Key</span>
+            <input id="service-key" type="password" placeholder="请输入 SERVICE_API_KEY" />
+          </label>
+        </div>
+        <p class="hint">服务 Key 只保存在当前浏览器本地，不会写入代码。</p>
+      </section>
+
+      <section class="panel">
+        <h2>上传参数</h2>
+        <form id="upload-form" class="form">
+          <div class="grid two">
+            <label class="field">
+              <span>PPT / PPTX / PDF 文件</span>
+              <input id="ppt-file" type="file" accept=".ppt,.pptx,.pdf" required />
+            </label>
+            <label class="field">
+              <span>讲稿时长（分钟）</span>
+              <input id="duration" type="number" min="1" max="30" step="1" value="5" />
+            </label>
+          </div>
+
+          <div class="grid three">
+            <label class="field">
+              <span>模式</span>
+              <select id="mode">
+                <option value="realtime" selected>实时</option>
+                <option value="normal">非实时</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>实时详细度</span>
+              <select id="realtime-level">
+                <option value="brief" selected>简洁</option>
+                <option value="moderate">适中</option>
+                <option value="detailed">详细</option>
+              </select>
+            </label>
+            <label class="field checkbox">
+              <span>鼠标跟踪</span>
+              <input id="mouse-tracking" type="checkbox" />
+            </label>
+          </div>
+
+          <div class="actions">
+            <button id="submit-button" type="submit">开始生成</button>
+            <button id="check-health-button" type="button" class="ghost">检查服务</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>任务状态</h2>
+        <div class="task-meta">
+          <div><span class="meta-label">任务 ID</span><code id="task-id">-</code></div>
+          <div><span class="meta-label">当前阶段</span><strong id="task-stage">-</strong></div>
+          <div><span class="meta-label">详情</span><span id="task-detail">-</span></div>
+        </div>
+        <div class="actions">
+          <button id="refresh-button" type="button" class="ghost" disabled>刷新进度</button>
+          <button id="auto-poll-button" type="button" class="ghost" disabled>停止轮询</button>
+        </div>
+        <pre id="log-box" class="log-box">等待操作…</pre>
+      </section>
+
+      <section class="panel">
+        <h2>结果预览</h2>
+        <div class="result-summary" id="result-summary">
+          <div><span class="meta-label">PPT 名称</span><span id="ppt-name">-</span></div>
+          <div><span class="meta-label">章节数</span><span id="chapter-count">0</span></div>
+          <div><span class="meta-label">合并视频</span><a id="merged-url" href="#" target="_blank" rel="noreferrer">-</a></div>
+        </div>
+        <ol id="chapter-list" class="chapter-list"></ol>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
