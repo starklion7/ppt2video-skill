@@ -3,108 +3,187 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PPT2Video 上传页</title>
-    <link rel="stylesheet" href="./style.css" />
+    <title>PPT2Video Local</title>
+    <link rel="stylesheet" href="./style.css?v=20260707-local-sync-1" />
   </head>
   <body>
-    <main class="page">
-      <section class="panel hero">
-        <div>
-          <p class="eyebrow">PPT2Video</p>
-          <h1>上传 PPT 生成讲解</h1>
-          <p class="subtle">
-            这个页面通过远程 MCP 调用 ppt2video 服务，适合在 Codex、浏览器或内部工具里作为轻入口使用。
-          </p>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-icon">P</div>
+          <div class="brand-text">PPT2Video</div>
         </div>
-        <div class="status-card">
-          <span class="status-label">MCP 地址</span>
-          <code id="backend-url-preview">http://36.140.182.229:60010/qilinvideo/mcp</code>
-        </div>
-      </section>
 
-      <section class="panel">
-        <h2>连接配置</h2>
-        <div class="grid two">
-          <label class="field">
-            <span>服务入口地址</span>
-            <input id="base-url" type="url" value="http://36.140.182.229:60010/qilinvideo" placeholder="http://36.140.182.229:60010/qilinvideo" />
-          </label>
-          <label class="field">
-            <span>服务 Key</span>
-            <input id="service-key" type="password" placeholder="请输入 SERVICE_API_KEY" />
-          </label>
-        </div>
-        <p class="hint">服务 Key 只保存在当前浏览器本地，不会写入代码。</p>
-      </section>
+        <button class="nav-tab active" data-tab="upload" type="button">
+          <span class="nav-title">上传页</span>
+          <span class="nav-subtitle">上传课件并生成讲解</span>
+        </button>
+        <button class="nav-tab" data-tab="player" type="button">
+          <span class="nav-title">讲解页</span>
+          <span class="nav-subtitle">查看进度与下载视频</span>
+        </button>
 
-      <section class="panel">
-        <h2>上传参数</h2>
-        <form id="upload-form" class="form">
-          <div class="grid two">
-            <label class="field">
-              <span>PPT / PPTX / PDF 文件</span>
-              <input id="ppt-file" type="file" accept=".ppt,.pptx,.pdf" required />
-            </label>
-            <label class="field">
-              <span>讲稿时长（分钟）</span>
-              <input id="duration" type="number" min="1" max="30" step="1" value="5" />
-            </label>
+        <div class="mcp-card">
+          <div class="mcp-row">
+            <span class="mcp-dot" id="service-dot"></span>
+            <span id="service-state">未检查</span>
           </div>
+          <div class="mcp-url" id="mcp-url-preview"></div>
+          <button id="check-service-button" class="ghost-btn full" type="button">检查服务</button>
+        </div>
+      </aside>
 
-          <div class="grid three">
-            <label class="field">
-              <span>模式</span>
-              <select id="mode">
-                <option value="realtime" selected>实时</option>
-                <option value="normal">非实时</option>
-              </select>
+      <main class="content">
+        <section class="tab-panel active" data-panel="upload">
+          <header class="topbar">
+            <div>
+              <h1>上传 PPT 生成讲解</h1>
+              <p class="muted">支持 PPT / PPTX / PDF</p>
+            </div>
+          </header>
+
+          <section class="upload-hero">
+            <label class="upload-card" for="ppt-file">
+              <input id="ppt-file" type="file" accept=".ppt,.pptx,.pdf" hidden />
+              <div class="upload-icon">PPT</div>
+              <div class="upload-copy">
+                <div class="upload-title" id="selected-file-name">点击上传或拖拽文件</div>
+                <div class="upload-subtitle">支持 .ppt / .pptx / .pdf，建议不超过 100MB</div>
+              </div>
             </label>
-            <label class="field">
-              <span>实时详细度</span>
-              <select id="realtime-level">
-                <option value="brief" selected>简洁</option>
-                <option value="moderate">适中</option>
-                <option value="detailed">详细</option>
-              </select>
+
+            <div class="toolbar">
+              <div class="toolbar-block grow">
+                <div class="toolbar-label">实时详细度</div>
+                <div class="segmented" id="realtime-level-group">
+                  <button class="seg active" data-value="brief" type="button">简单</button>
+                  <button class="seg" data-value="moderate" type="button">适中</button>
+                  <button class="seg" data-value="detailed" type="button">详细</button>
+                </div>
+              </div>
+
+              <label class="toolbar-block short">
+                <span class="toolbar-label">时长</span>
+                <input id="duration" type="number" min="1" max="30" step="1" value="5" />
+              </label>
+
+              <label class="toolbar-block short">
+                <span class="toolbar-label">模式</span>
+                <select id="mode">
+                  <option value="realtime" selected>实时</option>
+                  <option value="normal">非实时</option>
+                </select>
+              </label>
+
+              <label class="checkbox-wrap">
+                <input id="mouse-tracking" type="checkbox" />
+                <span>圈选跟随</span>
+              </label>
+
+              <button id="submit-button" class="primary-btn" type="button">生成讲解</button>
+            </div>
+          </section>
+
+          <section class="config-strip hidden" id="config-strip">
+            <label>
+              <span>服务入口地址</span>
+              <input id="base-url" type="url" value="http://36.140.182.229:60010/qilinvideo" />
             </label>
-            <label class="field checkbox">
-              <span>鼠标跟踪</span>
-              <input id="mouse-tracking" type="checkbox" />
+            <label>
+              <span>服务 Key</span>
+              <input id="service-key" type="password" placeholder="SERVICE_API_KEY" />
             </label>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-panel="player">
+          <header class="topbar">
+            <div class="file-header">
+              <div class="file-badge">P</div>
+              <div>
+                <h1 id="ppt-name">PPT2Video</h1>
+                <p class="muted" id="task-summary">等待任务开始</p>
+              </div>
+            </div>
+            <div class="top-actions">
+              <button id="download-script-button" class="light-green" type="button">导出字幕</button>
+              <button id="import-script-button" class="light-purple" type="button">导入字幕</button>
+              <button id="fullscreen-button" class="blue-btn" type="button">全屏播放</button>
+              <button id="download-video-button" class="blue-btn" type="button">下载视频</button>
+            </div>
+          </header>
+
+          <div class="player-grid">
+            <section class="player-left">
+              <div class="status-bar">
+                <div class="progress-track">
+                  <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-text" id="progress-text">等待任务开始</div>
+              </div>
+
+              <div class="chapter-header">
+                <h2>讲解目录</h2>
+                <span id="chapter-total">0 页</span>
+              </div>
+              <div class="chapter-list" id="chapter-list"></div>
+            </section>
+
+            <section class="player-main">
+              <div class="preview-header">
+                <h2>讲解预览</h2>
+                <span class="duration-pill" id="duration-pill">全文讲解时长: 估算中...</span>
+              </div>
+              <div class="preview-card">
+                <div class="video-stage" id="video-stage">
+                  <img id="preview-image" alt="" hidden />
+                  <div class="video-placeholder" id="video-placeholder">
+                    <div class="video-thumb"></div>
+                    <div class="video-tip">上传课件并生成后，这里会展示讲解页面。</div>
+                    <div class="status-chip" id="stage-chip">等待开始</div>
+                  </div>
+                </div>
+                <div class="player-controls">
+                  <button class="control-btn" id="play-button" type="button">▶</button>
+                  <span id="current-time">0:00</span>
+                  <input id="timeline" type="range" min="0" max="100" value="0" />
+                  <span id="total-time">0:00</span>
+                  <button class="speed-btn" id="speed-button" type="button">1x</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="player-right">
+              <div class="script-header">
+                <h2>字幕</h2>
+                <button id="edit-script-button" class="ghost-btn" type="button">编辑</button>
+              </div>
+              <textarea id="script-editor" class="script-box" readonly placeholder="字幕生成中..."></textarea>
+              <div class="script-actions">
+                <button id="save-script-button" class="blue-btn" type="button">保存</button>
+                <button id="cancel-script-button" class="ghost-btn" type="button">取消</button>
+              </div>
+              <div class="meta-panel">
+                <div class="meta-item">
+                  <div class="meta-label">任务 ID</div>
+                  <div class="meta-value" id="task-id">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">阶段</div>
+                  <div class="meta-value" id="task-stage">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">详情</div>
+                  <div class="meta-value" id="task-detail">-</div>
+                </div>
+              </div>
+            </section>
           </div>
+        </section>
+      </main>
+    </div>
 
-          <div class="actions">
-            <button id="submit-button" type="submit">开始生成</button>
-            <button id="check-health-button" type="button" class="ghost">检查服务</button>
-          </div>
-        </form>
-      </section>
-
-      <section class="panel">
-        <h2>任务状态</h2>
-        <div class="task-meta">
-          <div><span class="meta-label">任务 ID</span><code id="task-id">-</code></div>
-          <div><span class="meta-label">当前阶段</span><strong id="task-stage">-</strong></div>
-          <div><span class="meta-label">详情</span><span id="task-detail">-</span></div>
-        </div>
-        <div class="actions">
-          <button id="refresh-button" type="button" class="ghost" disabled>刷新进度</button>
-          <button id="auto-poll-button" type="button" class="ghost" disabled>停止轮询</button>
-        </div>
-        <pre id="log-box" class="log-box">等待操作…</pre>
-      </section>
-
-      <section class="panel">
-        <h2>结果预览</h2>
-        <div class="result-summary" id="result-summary">
-          <div><span class="meta-label">PPT 名称</span><span id="ppt-name">-</span></div>
-          <div><span class="meta-label">章节数</span><span id="chapter-count">0</span></div>
-          <div><span class="meta-label">合并视频</span><a id="merged-url" href="#" target="_blank" rel="noreferrer">-</a></div>
-        </div>
-        <ol id="chapter-list" class="chapter-list"></ol>
-      </section>
-    </main>
-
-    <script src="./app.js"></script>
+    <a id="download-anchor" hidden></a>
+    <script src="./app.js?v=20260707-local-sync-1"></script>
   </body>
 </html>
