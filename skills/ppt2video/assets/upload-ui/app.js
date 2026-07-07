@@ -1,4 +1,5 @@
 const DEFAULT_BASE_URL = "http://36.140.182.229:60010/qilinvideo";
+const DEFAULT_SERVICE_KEY = "local-skill-service-key-20260702";
 const LOCAL_PROXY_BASE_URL = "http://127.0.0.1:61734";
 const STORAGE_KEY = "ppt2video-local-ui-settings";
 const TASK_KEY = "ppt2video-local-ui-task";
@@ -85,11 +86,11 @@ function loadSettings() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     els.baseUrl.value = saved.baseUrl || DEFAULT_BASE_URL;
-    els.serviceKey.value = saved.serviceKey || "";
+    els.serviceKey.value = saved.serviceKey || DEFAULT_SERVICE_KEY;
     state.realtimeLevel = saved.realtimeLevel || "brief";
   } catch (_error) {
     els.baseUrl.value = DEFAULT_BASE_URL;
-    els.serviceKey.value = "";
+    els.serviceKey.value = DEFAULT_SERVICE_KEY;
   }
   updateStyleOptions();
   updateMcpPreview();
@@ -111,6 +112,7 @@ function loadTask() {
 function showPage(name) {
   els.uploadPage.classList.toggle("active", name === "upload");
   els.playbackPage.classList.toggle("active", name === "playback");
+  document.body.classList.toggle("is-playback", name === "playback");
 }
 
 function updateMcpPreview() {
@@ -289,7 +291,7 @@ function renderProgress(progress) {
   els.progressFill.style.width = `${percent}%`;
   els.progressText.textContent = detail || (done ? "完成" : "处理中");
   els.progressPercent.textContent = `${percent}%`;
-  els.durationPill.textContent = totalSeconds ? `${formatTime(totalSeconds)}` : "全文讲解时长: 估算中...";
+  els.durationPill.textContent = totalSeconds ? `全文讲解时长: ${formatTime(totalSeconds)}` : "全文讲解时长: 估算中...";
   els.stageChip.textContent = done ? "讲解已完成" : stage === "error" ? "生成失败" : "讲解生成中";
   els.totalTime.textContent = totalSeconds ? formatTime(totalSeconds) : "0:00";
   els.currentTime.textContent = "0:00";
@@ -326,6 +328,7 @@ async function submitTask() {
   updateMcpPreview();
   els.submitButton.disabled = true;
   els.submitButtonText.textContent = "上传中...";
+  setServiceState("", "上传中...");
   try {
     const fileBase64 = await fileToBase64(file);
     const data = await callMcpTool("submit_narration_base64", {
@@ -337,11 +340,13 @@ async function submitTask() {
       realtime_duration_level: state.realtimeLevel,
     });
     state.taskId = data.task_id || "";
+    setServiceState("ok", "任务已提交");
     saveTask();
     showPage("playback");
     startPolling();
     await refreshProgress();
   } catch (error) {
+    setServiceState("error", error.message);
     alert(`提交失败: ${error.message}`);
   } finally {
     els.submitButton.disabled = false;
