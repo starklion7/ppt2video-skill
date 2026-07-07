@@ -29,7 +29,7 @@ PPT2Video 支持以下两种方式：
 PPT2Video 讲解页面：[点击打开](http://36.140.182.229:60010/qilinvideo/skill-upload?service_key=local-skill-service-key-20260702)
 
 如果用户想使用随 skill 分发的轻量上传页，直接给本地页面链接：
-[打开本地上传页](file://$CODEX_HOME/skills/ppt2video/assets/upload-ui/index.html)
+[打开本地上传页](file:///ABSOLUTE/PATH/TO/skills/ppt2video/assets/upload-ui/index.html)
 
 该本地页面会通过远端 MCP 提交文件和查询进度，不直接调用普通 `/api/upload-ppt` 接口。
 
@@ -48,7 +48,7 @@ PPT2Video 讲解页面：[点击打开](http://36.140.182.229:60010/qilinvideo/s
 ```markdown
 PPT2Video 讲解页面：[点击打开](http://36.140.182.229:60010/qilinvideo/skill-upload?service_key=local-skill-service-key-20260702)
 
-本地上传页：[点击打开](file://$CODEX_HOME/skills/ppt2video/assets/upload-ui/index.html)
+本地上传页：[点击打开](file:///ABSOLUTE/PATH/TO/skills/ppt2video/assets/upload-ui/index.html)
 
 轻量上传页调用远端 MCP：`/qilinvideo/mcp`
 ```
@@ -58,7 +58,8 @@ PPT2Video 讲解页面：[点击打开](http://36.140.182.229:60010/qilinvideo/s
 补充要求：
 
 - 当返回本地上传页时，默认使用 Markdown 链接形式，不要只返回纯路径或代码块。
-- 本地页面链接优先写成：`file://$CODEX_HOME/skills/ppt2video/assets/upload-ui/index.html`
+- 不要在 `file://` 链接里保留 `$CODEX_HOME` 这类环境变量占位符；必须先展开成真实绝对路径再返回。
+- 本地页面链接格式必须是可直接打开的绝对路径，例如：`file:///Users/yourname/.codex/skills/ppt2video/assets/upload-ui/index.html`
 
 ## 2. 生成讲解
 
