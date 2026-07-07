@@ -10,36 +10,39 @@ const state = {
   selectedChapterIndex: 0,
   realtimeLevel: "brief",
   editingScript: false,
-  scriptDraft: "",
 };
 
 const els = {
+  uploadPage: document.getElementById("upload-page"),
+  playbackPage: document.getElementById("playback-page"),
   baseUrl: document.getElementById("base-url"),
   serviceKey: document.getElementById("service-key"),
   pptFile: document.getElementById("ppt-file"),
-  duration: document.getElementById("duration"),
-  mode: document.getElementById("mode"),
-  mouseTracking: document.getElementById("mouse-tracking"),
+  uploadCard: document.getElementById("upload-card"),
+  uploadEmpty: document.getElementById("upload-empty"),
+  uploadFileState: document.getElementById("upload-file-state"),
+  uploadFileLogo: document.getElementById("upload-file-logo"),
+  selectedFileName: document.getElementById("selected-file-name"),
+  removeFileButton: document.getElementById("remove-file-button"),
   submitButton: document.getElementById("submit-button"),
-  navTabs: Array.from(document.querySelectorAll(".nav-tab")),
-  tabPanels: Array.from(document.querySelectorAll(".tab-panel")),
-  segButtons: Array.from(document.querySelectorAll(".seg")),
+  submitButtonText: document.getElementById("submit-button-text"),
+  styleOptions: Array.from(document.querySelectorAll(".style-option")),
   serviceDot: document.getElementById("service-dot"),
   serviceState: document.getElementById("service-state"),
   mcpUrlPreview: document.getElementById("mcp-url-preview"),
   checkServiceButton: document.getElementById("check-service-button"),
-  selectedFileName: document.getElementById("selected-file-name"),
   chapterList: document.getElementById("chapter-list"),
   chapterTotal: document.getElementById("chapter-total"),
   progressFill: document.getElementById("progress-fill"),
   progressText: document.getElementById("progress-text"),
+  progressPercent: document.getElementById("progress-percent"),
   durationPill: document.getElementById("duration-pill"),
   stageChip: document.getElementById("stage-chip"),
+  sidebarGenerating: document.getElementById("sidebar-generating"),
   taskId: document.getElementById("task-id"),
   taskStage: document.getElementById("task-stage"),
   taskDetail: document.getElementById("task-detail"),
   pptName: document.getElementById("ppt-name"),
-  taskSummary: document.getElementById("task-summary"),
   previewImage: document.getElementById("preview-image"),
   videoPlaceholder: document.getElementById("video-placeholder"),
   scriptEditor: document.getElementById("script-editor"),
@@ -53,14 +56,14 @@ const els = {
   playButton: document.getElementById("play-button"),
   speedButton: document.getElementById("speed-button"),
   timeline: document.getElementById("timeline"),
+  seekFilled: document.getElementById("seek-filled"),
   currentTime: document.getElementById("current-time"),
   totalTime: document.getElementById("total-time"),
   downloadAnchor: document.getElementById("download-anchor"),
 };
 
 function normalizeBaseUrl(raw) {
-  const trimmed = (raw || "").trim();
-  return (trimmed || DEFAULT_BASE_URL).replace(/\/+$/, "");
+  return ((raw || "").trim() || DEFAULT_BASE_URL).replace(/\/+$/, "");
 }
 
 function getMcpUrl() {
@@ -68,15 +71,14 @@ function getMcpUrl() {
 }
 
 function saveSettings() {
-  const payload = {
-    baseUrl: els.baseUrl.value.trim(),
-    serviceKey: els.serviceKey.value,
-    duration: els.duration.value,
-    mode: els.mode.value,
-    mouseTracking: els.mouseTracking.checked,
-    realtimeLevel: state.realtimeLevel,
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      baseUrl: els.baseUrl.value.trim(),
+      serviceKey: els.serviceKey.value,
+      realtimeLevel: state.realtimeLevel,
+    }),
+  );
 }
 
 function loadSettings() {
@@ -84,31 +86,31 @@ function loadSettings() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     els.baseUrl.value = saved.baseUrl || DEFAULT_BASE_URL;
     els.serviceKey.value = saved.serviceKey || "";
-    els.duration.value = saved.duration || "5";
-    els.mode.value = saved.mode || "realtime";
-    els.mouseTracking.checked = Boolean(saved.mouseTracking);
     state.realtimeLevel = saved.realtimeLevel || "brief";
   } catch (_error) {
     els.baseUrl.value = DEFAULT_BASE_URL;
     els.serviceKey.value = "";
   }
-  updateRealtimeButtons();
+  updateStyleOptions();
   updateMcpPreview();
 }
 
 function saveTask() {
-  if (!state.taskId) return;
-  localStorage.setItem(TASK_KEY, JSON.stringify({ taskId: state.taskId }));
+  localStorage.setItem(TASK_KEY, JSON.stringify({ taskId: state.taskId || "" }));
 }
 
 function loadTask() {
   try {
     const saved = JSON.parse(localStorage.getItem(TASK_KEY) || "{}");
-    if (saved.taskId) {
-      state.taskId = saved.taskId;
-      els.taskId.textContent = state.taskId;
-    }
-  } catch (_error) {}
+    state.taskId = saved.taskId || "";
+  } catch (_error) {
+    state.taskId = "";
+  }
+}
+
+function showPage(name) {
+  els.uploadPage.classList.toggle("active", name === "upload");
+  els.playbackPage.classList.toggle("active", name === "playback");
 }
 
 function updateMcpPreview() {
@@ -116,24 +118,29 @@ function updateMcpPreview() {
 }
 
 function setServiceState(kind, text) {
-  els.serviceDot.className = "mcp-dot";
+  els.serviceDot.className = "service-dock__dot";
   if (kind) els.serviceDot.classList.add(kind);
   els.serviceState.textContent = text;
 }
 
-function updateRealtimeButtons() {
-  els.segButtons.forEach((button) => {
+function updateStyleOptions() {
+  els.styleOptions.forEach((button) => {
     button.classList.toggle("active", button.dataset.value === state.realtimeLevel);
   });
 }
 
-function selectTab(tab) {
-  els.navTabs.forEach((tabButton) => {
-    tabButton.classList.toggle("active", tabButton.dataset.tab === tab);
-  });
-  els.tabPanels.forEach((panel) => {
-    panel.classList.toggle("active", panel.dataset.panel === tab);
-  });
+function updateFileState(file) {
+  const hasFile = Boolean(file);
+  els.uploadCard.classList.toggle("has-file", hasFile);
+  els.uploadEmpty.classList.toggle("hidden", hasFile);
+  els.uploadFileState.classList.toggle("hidden", !hasFile);
+  if (file) {
+    els.selectedFileName.textContent = file.name;
+    els.uploadFileLogo.textContent = /\.pdf$/i.test(file.name) ? "PDF" : "PPT";
+  } else {
+    els.selectedFileName.textContent = "";
+    els.uploadFileLogo.textContent = "PPT";
+  }
 }
 
 function getHeaders() {
@@ -174,10 +181,7 @@ async function callMcp(method, params = {}) {
 }
 
 async function callMcpTool(name, args = {}) {
-  const result = await callMcp("tools/call", {
-    name,
-    arguments: args,
-  });
+  const result = await callMcp("tools/call", { name, arguments: args });
   if (result.structuredContent) return result.structuredContent;
   const text = result.content?.find((item) => item.type === "text")?.text || "{}";
   try {
@@ -204,19 +208,11 @@ function buildAbsoluteUrl(baseUrl, maybeRelative) {
   return `${normalizeBaseUrl(baseUrl)}${raw.startsWith("/") ? "" : "/"}${raw}`;
 }
 
-function formatSeconds(seconds) {
+function formatTime(seconds) {
   const total = Math.max(0, Math.round(Number(seconds) || 0));
   const minutes = Math.floor(total / 60);
   const remain = total % 60;
   return `${minutes}:${String(remain).padStart(2, "0")}`;
-}
-
-function getChapterTitle(chapter, index) {
-  return chapter.title || chapter.ppt_title || chapter.page_title || `第 ${index + 1} 页`;
-}
-
-function getChapterScript(chapter) {
-  return chapter.script || chapter.subtitle || chapter.text || chapter.narration || "";
 }
 
 function getProgressPercent(progress) {
@@ -231,28 +227,31 @@ function getProgressPercent(progress) {
   return progress.stage === "done" ? 100 : 0;
 }
 
+function getChapterTitle(chapter, index) {
+  return chapter.title || chapter.ppt_title || chapter.page_title || `第${index + 1}页`;
+}
+
+function getChapterScript(chapter) {
+  return chapter.script || chapter.subtitle || chapter.text || chapter.narration || "";
+}
+
 function renderChapters(progress) {
   const chapters = Array.isArray(progress.chapters) ? progress.chapters : [];
   els.chapterTotal.textContent = `${chapters.length} 页`;
   els.chapterList.innerHTML = "";
   if (!chapters.length) return;
-
   if (state.selectedChapterIndex >= chapters.length) state.selectedChapterIndex = 0;
-
   chapters.forEach((chapter, index) => {
-    const item = document.createElement("button");
-    item.type = "button";
-    item.className = "chapter-item";
-    if (index === state.selectedChapterIndex) item.classList.add("active");
-    item.innerHTML = `
-      <span class="chapter-checkbox"><span class="chapter-mark"></span></span>
-      <span class="chapter-title">${escapeHtml(getChapterTitle(chapter, index))}</span>
-    `;
-    item.addEventListener("click", () => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "sidebar__item";
+    if (index === state.selectedChapterIndex) button.classList.add("active");
+    button.textContent = getChapterTitle(chapter, index);
+    button.addEventListener("click", () => {
       state.selectedChapterIndex = index;
       renderProgress(state.progress);
     });
-    els.chapterList.appendChild(item);
+    els.chapterList.appendChild(button);
   });
 }
 
@@ -262,9 +261,7 @@ function renderSelectedChapter(progress) {
   const script = chapter ? getChapterScript(chapter) : "";
   if (!state.editingScript) {
     els.scriptEditor.value = script || "字幕生成中...";
-    state.scriptDraft = els.scriptEditor.value;
   }
-
   const imageUrl = buildAbsoluteUrl(els.baseUrl.value, chapter?.image_url || chapter?.cover_url || "");
   if (imageUrl) {
     els.previewImage.src = imageUrl;
@@ -280,40 +277,30 @@ function renderProgress(progress) {
   state.progress = progress;
   const stage = progress.stage || "-";
   const detail = progress.detail || "-";
-  const chapterCount = progress.chapter_count ?? (progress.chapters || []).length ?? 0;
-  const percent = getProgressPercent(progress);
   const totalSeconds = Number(progress.total_duration_seconds || progress.duration_seconds || 0);
+  const percent = getProgressPercent(progress);
   const mergedUrl = buildAbsoluteUrl(els.baseUrl.value, progress.merged_url || "");
+  const done = stage === "done";
 
   els.taskId.textContent = state.taskId || "-";
   els.taskStage.textContent = stage;
   els.taskDetail.textContent = detail;
   els.pptName.textContent = progress.ppt_original_name || progress.filename || "PPT2Video";
-  els.taskSummary.textContent = detail;
   els.progressFill.style.width = `${percent}%`;
-  els.progressText.textContent = `${stage === "done" ? "讲解已完成" : detail || "讲解生成中"} ${percent}%`;
-  els.durationPill.textContent = totalSeconds ? `全文讲解时长: ${formatSeconds(totalSeconds)}` : "全文讲解时长: 估算中...";
-  els.stageChip.textContent = stage === "done" ? "讲解已完成" : stage === "error" ? "生成失败" : "讲解生成中";
-  els.totalTime.textContent = totalSeconds ? formatSeconds(totalSeconds) : "0:00";
+  els.progressText.textContent = detail || (done ? "完成" : "处理中");
+  els.progressPercent.textContent = `${percent}%`;
+  els.durationPill.textContent = totalSeconds ? `${formatTime(totalSeconds)}` : "全文讲解时长: 估算中...";
+  els.stageChip.textContent = done ? "讲解已完成" : stage === "error" ? "生成失败" : "讲解生成中";
+  els.totalTime.textContent = totalSeconds ? formatTime(totalSeconds) : "0:00";
   els.currentTime.textContent = "0:00";
   els.timeline.value = "0";
+  els.seekFilled.style.width = "0%";
+  els.sidebarGenerating.classList.toggle("hidden", done);
   els.downloadVideoButton.disabled = !mergedUrl;
-  els.downloadScriptButton.disabled = chapterCount === 0;
-  els.fullscreenButton.disabled = !mergedUrl && els.previewImage.hidden;
-
+  els.downloadScriptButton.disabled = !Array.isArray(progress.chapters) || progress.chapters.length === 0;
   renderChapters(progress);
   renderSelectedChapter(progress);
-
-  if (stage === "done") stopPolling();
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+  if (done || stage === "error") stopPolling();
 }
 
 async function checkService() {
@@ -338,25 +325,27 @@ async function submitTask() {
   saveSettings();
   updateMcpPreview();
   els.submitButton.disabled = true;
+  els.submitButtonText.textContent = "上传中...";
   try {
     const fileBase64 = await fileToBase64(file);
     const data = await callMcpTool("submit_narration_base64", {
       filename: file.name,
       file_base64: fileBase64,
-      duration: Number(els.duration.value || 5),
-      enable_mouse_tracking: els.mouseTracking.checked,
-      mode: els.mode.value,
+      duration: 5,
+      enable_mouse_tracking: false,
+      mode: "realtime",
       realtime_duration_level: state.realtimeLevel,
     });
     state.taskId = data.task_id || "";
     saveTask();
-    selectTab("player");
+    showPage("playback");
     startPolling();
     await refreshProgress();
   } catch (error) {
     alert(`提交失败: ${error.message}`);
   } finally {
     els.submitButton.disabled = false;
+    els.submitButtonText.textContent = "生成讲解";
   }
 }
 
@@ -372,7 +361,7 @@ async function refreshProgress() {
 
 function startPolling() {
   stopPolling();
-  state.pollTimer = window.setInterval(refreshProgress, 5000);
+  state.pollTimer = window.setInterval(refreshProgress, 1500);
 }
 
 function stopPolling() {
@@ -450,30 +439,40 @@ function bindEvents() {
   els.baseUrl.addEventListener("input", updateMcpPreview);
   els.baseUrl.addEventListener("change", saveSettings);
   els.serviceKey.addEventListener("change", saveSettings);
-  els.duration.addEventListener("change", saveSettings);
-  els.mode.addEventListener("change", saveSettings);
-  els.mouseTracking.addEventListener("change", saveSettings);
-  els.pptFile.addEventListener("change", () => {
-    const file = els.pptFile.files?.[0];
-    els.selectedFileName.textContent = file ? file.name : "点击上传或拖拽文件";
-  });
-  els.submitButton.addEventListener("click", submitTask);
   els.checkServiceButton.addEventListener("click", checkService);
-  els.navTabs.forEach((button) => {
-    button.addEventListener("click", () => selectTab(button.dataset.tab));
-  });
-  els.segButtons.forEach((button) => {
+  els.styleOptions.forEach((button) => {
     button.addEventListener("click", () => {
       state.realtimeLevel = button.dataset.value;
-      updateRealtimeButtons();
+      updateStyleOptions();
       saveSettings();
     });
   });
+  els.pptFile.addEventListener("change", () => updateFileState(els.pptFile.files?.[0] || null));
+  els.removeFileButton.addEventListener("click", () => {
+    els.pptFile.value = "";
+    updateFileState(null);
+  });
+  els.uploadCard.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    els.uploadCard.classList.add("drag");
+  });
+  els.uploadCard.addEventListener("dragleave", () => els.uploadCard.classList.remove("drag"));
+  els.uploadCard.addEventListener("drop", (event) => {
+    event.preventDefault();
+    els.uploadCard.classList.remove("drag");
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    els.pptFile.files = dt.files;
+    updateFileState(file);
+  });
+  els.submitButton.addEventListener("click", submitTask);
   els.downloadVideoButton.addEventListener("click", downloadVideo);
   els.downloadScriptButton.addEventListener("click", exportScript);
   els.importScriptButton.addEventListener("click", () => alert("本地页暂未接入字幕导入。"));
   els.fullscreenButton.addEventListener("click", () => {
-    const target = document.querySelector(".preview-card");
+    const target = document.querySelector(".player-area__video-shell");
     if (target?.requestFullscreen) void target.requestFullscreen();
   });
   els.editScriptButton.addEventListener("click", beginEditScript);
@@ -481,18 +480,22 @@ function bindEvents() {
   els.saveScriptButton.addEventListener("click", saveEditedScript);
   els.playButton.addEventListener("click", () => alert("本地页暂未接入在线播放控件。"));
   els.speedButton.addEventListener("click", () => alert("本地页暂未接入倍速播放。"));
+  els.timeline.addEventListener("input", () => {
+    els.seekFilled.style.width = `${els.timeline.value}%`;
+  });
 }
 
 async function init() {
   loadSettings();
   loadTask();
   bindEvents();
+  updateFileState(null);
   if (state.taskId) {
-    selectTab("player");
+    showPage("playback");
     startPolling();
     await refreshProgress();
   } else {
-    selectTab("upload");
+    showPage("upload");
   }
 }
 
